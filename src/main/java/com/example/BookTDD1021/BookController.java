@@ -41,13 +41,6 @@ public class BookController {
     }
 
 
-//    public Book updateName(int id, String title) {
-//        Book temp = (Book)this.bookRepository.findById(id).get();
-//        temp.setTitle(title);
-//        Book updated = (Book)this.bookRepository.save(temp);
-//        return updated;
-//    }
-
 //    @PutMapping({"/update/{id}/name/{name}"})
 //    public Book updateTitle(@PathVariable("id") int id, @PathVariable String title) {
 //        return this.updateName(id, title);
@@ -82,12 +75,21 @@ public class BookController {
         return new BookDetailResponse(HttpStatus.NOT_FOUND.value(), "Author not found", null);
     }
 
-    //post mapping to update book title by given id
-    @PutMapping("/{id}")
+    //put mapping to update book title by given id
+    @PutMapping("/{id}/{title}")
     @ResponseBody
-    public BookDetailResponse updateName(@RequestBody Book book) {
-        System.out.println("Updating book " + book);
+    public BookDetailResponse updateTitle(@PathVariable("id") int id, @PathVariable String title) {
+        //System.out.println("Updating book " + book);
+        this.updateName(id, title);
         return new BookDetailResponse(HttpStatus.FOUND.value(), "Book updated", null);
+    }
+
+    //method used in put method to change previous title to new title
+    public Book updateName(int id, String title) {
+        Book temp = (Book)this.bookRepository.findById(id).get();
+        temp.setTitle(title);
+        Book updated = (Book)this.bookRepository.save(temp);
+        return updated;
     }
 
 

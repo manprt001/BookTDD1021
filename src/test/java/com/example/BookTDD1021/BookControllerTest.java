@@ -242,7 +242,8 @@ public class BookControllerTest {
 //    }
 
 
-    // test function for updating the book tittle by giving book id
+    // test function for updating the book title by giving book id
+    //This test case passes when run on its own, but fails when run as a whole
     @Test
     @Transactional
     @Rollback
@@ -250,12 +251,12 @@ public class BookControllerTest {
         this.createMockManyBooks();
         List<Book> bookList = (List)this.bookRepository.findAll();
         Book book1 = (Book)bookList.get(0);
-        mvc.perform(MockMvcRequestBuilders.put("/books/1")
-                .contentType(MediaType.APPLICATION_JSON)
-                .accept(MediaType.APPLICATION_JSON)
-                .content("{\"id\": 1,\n" +
-                        "  \"title\": \"A Notion of Love\",\n" +
-                        "  \"author\": \"Abbie Wiliams\"}"))
+        mvc.perform(MockMvcRequestBuilders.put("/books/1/A Notion of Love"))
+//                .contentType(MediaType.APPLICATION_JSON)
+//                .accept(MediaType.APPLICATION_JSON)
+//                .content("{\"id\": 1,\n" +
+//                        "  \"title\": \"A Notion of Love\",\n" +
+//                        "  \"author\": \"Abbie Wiliams\"}"))
                 .andExpect(MockMvcResultMatchers.status().isOk())
                 .andExpect(MockMvcResultMatchers.jsonPath("$.status", Matchers.is(HttpStatus.FOUND.value())))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.message", Matchers.is("Book updated")))
