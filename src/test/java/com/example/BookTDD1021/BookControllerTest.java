@@ -103,10 +103,71 @@ public class BookControllerTest {
     @Test
     @Transactional
     @Rollback
+    public void testGetExistingAuthorDetails() throws Exception {
+        this.createMockManyBooks();
+        List<Book> booksList = (List)this.bookRepository.findAll();
+        Book book = (Book)booksList.get(3); //index is 3 for james charles
+        RequestBuilder request = MockMvcRequestBuilders.get("/books/author", new Object[0])
+                .param("author", new String[]{"James Charles"});
+        this.mvc.perform(request)
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.status", Matchers.is(HttpStatus.FOUND.value())))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.message", Matchers.is("Success")))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.data.id", Matchers.is(book.getId())))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.data.title", Matchers.is(book.getTitle())))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.data.author", Matchers.is(book.getAuthor())));
+    }
+
+    //    @Test
+//    @Transactional
+//    @Rollback
+//    public void testGetExistingAuthorMany() throws Exception {
+//        this.createMockManyBooks();
+//        List<Book> booksList = (List)this.bookRepository.findAll();
+//        Book book8 = (Book)booksList.get(7);
+//        Book book9 = (Book)booksList.get(8);
+//        RequestBuilder request = MockMvcRequestBuilders.get("/books/author", new Object[0])
+//                .param("author", new String[]{"J.K. Rowling"});
+//        this.mvc.perform(request)
+//                .andExpect(MockMvcResultMatchers.status().isOk())
+//                .andExpect(MockMvcResultMatchers.jsonPath("$.status", Matchers.is(HttpStatus.FOUND.value())))
+//                .andExpect(MockMvcResultMatchers.jsonPath("$.message", Matchers.is("Success")))
+//                .andExpect(MockMvcResultMatchers.jsonPath("$[7].id", Matchers.is(book8.getId())))
+//                .andExpect(MockMvcResultMatchers.jsonPath("$[7].title", Matchers.is(book8.getTitle())))
+//                .andExpect(MockMvcResultMatchers.jsonPath("$[7].author", Matchers.is(book8.getAuthor())))
+//                .andExpect(MockMvcResultMatchers.jsonPath("$[8].id", Matchers.is(book9.getId())))
+//                .andExpect(MockMvcResultMatchers.jsonPath("$[8].title", Matchers.is(book9.getTitle())))
+//                .andExpect(MockMvcResultMatchers.jsonPath("$[8].author", Matchers.is(book9.getAuthor())));
+//    }
+    @Test
+    @Transactional
+    @Rollback
     public void testGetNonExistingBookDetails() throws Exception {
         this.createMockManyBooks();
         List<Book> bookList = (List)this.bookRepository.findAll();
-        RequestBuilder request = MockMvcRequestBuilders.get("/books/title", new Object[0]).param("title", new String[]{"SUPERMAN"});
-        this.mvc.perform(request).andExpect(MockMvcResultMatchers.status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$.status", Matchers.is(HttpStatus.NOT_FOUND.value()))).andExpect(MockMvcResultMatchers.jsonPath("$.message", Matchers.is("Book not found"))).andExpect(MockMvcResultMatchers.jsonPath("$.data", Matchers.is(Matchers.nullValue())));
+        RequestBuilder request = MockMvcRequestBuilders.get("/books/title", new Object[0])
+                .param("title", new String[]{"SUPERMAN"});
+        this.mvc.perform(request)
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.status", Matchers.is(HttpStatus.NOT_FOUND.value())))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.message", Matchers.is("Book not found")))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.data", Matchers.is(Matchers.nullValue())));
     }
+
+    @Test
+    @Transactional
+    @Rollback
+    public void testDeleteBook() throws Exception {
+        this.createMockManyBooks();
+        List<Book> bookList = (List)this.bookRepository.findAll();
+        Book book3 = (Book)bookList.get(2);
+        String deleteid = String.valueOf(book3.getId());
+        RequestBuilder request = MockMvcRequestBuilders.delete("/books", new Object[0])
+                .param("id", deleteid);
+    }
+
+
 }
+
+
+

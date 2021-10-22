@@ -52,4 +52,14 @@ public class BookController {
     public void deleteBook(@PathVariable int id) {
         this.bookRepository.deleteById(id);
     }
+
+    @GetMapping("/author")
+    public BookDetailResponse getBookDetailByAuthor(@RequestParam String author) {
+        Optional<Book> book = this.bookRepository.findByAuthor(author);
+        if (book.isPresent())
+            return new BookDetailResponse(HttpStatus.FOUND.value(), "Success", book.get());
+        return new BookDetailResponse(HttpStatus.NOT_FOUND.value(), "Author not found", null);
+    }
+
+
 }
