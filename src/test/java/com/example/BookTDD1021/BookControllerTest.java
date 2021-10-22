@@ -29,8 +29,7 @@ public class BookControllerTest {
     ObjectMapper mapper = new ObjectMapper();
     @Autowired
     BookRepository bookRepository;
-//    @Autowired
-//    UserRepository userRepository;
+
 
     public BookControllerTest() {
     }
@@ -40,12 +39,14 @@ public class BookControllerTest {
         return new String(Files.readAllBytes(paths));
     }
 
+    // one book in json file
     private void createMockData() throws Exception {
         String movieStr = this.getJSON("src/test/resources/onebook.json");
         Book book = (Book)this.mapper.readValue(movieStr, Book.class);
         this.bookRepository.save(book);
     }
 
+    //Many books in json file
     private void createMockManyBooks() throws Exception {
         String bookStr = this.getJSON("src/test/resources/manybooks.json");
         TypeReference<List<Book>> books = new TypeReference<List<Book>>() {
@@ -54,21 +55,31 @@ public class BookControllerTest {
         this.bookRepository.saveAll(jsonToBookList);
     }
 
+    // function test for checking booklist is empty
     @Test
-    public void testGetEmptyMovies() throws Exception {
-        this.mvc.perform(MockMvcRequestBuilders.get("/books", new Object[0])).andExpect(MockMvcResultMatchers.status().isOk()).andExpect(MockMvcResultMatchers.content().json("[]"));
+    public void testGetEmptyBooks() throws Exception {
+        this.mvc.perform(MockMvcRequestBuilders.get("/books", new Object[0]))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.content().json("[]"));
     }
 
+    // Function test for post mapping adding a book
+    //This test case passes when run on its own, but fails when run as a whole
     @Test
     @Transactional
     @Rollback
-    public void testCreateBook() throws Exception {
-        String bookStr = this.getJSON("src/test/resources/onebook.json");
+    public void testAddBook() throws Exception {
+        String bookStr = this.getJSON("src/test/resources/onebook.json"); // giving the json path for one book
         Book book = (Book)this.mapper.readValue(bookStr, Book.class);
         RequestBuilder request = MockMvcRequestBuilders.post("/books", new Object[0]).contentType(MediaType.APPLICATION_JSON).content(bookStr);
-        this.mvc.perform(request).andExpect(MockMvcResultMatchers.status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$.id", Matchers.is(book.getId()))).andExpect(MockMvcResultMatchers.jsonPath("$.title", Matchers.is(book.getTitle()))).andExpect(MockMvcResultMatchers.jsonPath("$.author", Matchers.is(book.getAuthor())));
+        this.mvc.perform(request)
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.id", Matchers.is(book.getId())))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.title", Matchers.is(book.getTitle())))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.author", Matchers.is(book.getAuthor())));
     }
 
+    // test get mapping to view one book
     @Test
     @Transactional
     @Rollback
@@ -78,6 +89,7 @@ public class BookControllerTest {
         this.mvc.perform(MockMvcRequestBuilders.get("/books", new Object[0])).andExpect(MockMvcResultMatchers.status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$[0].id", Matchers.is(book.getId()))).andExpect(MockMvcResultMatchers.jsonPath("$[0].title", Matchers.is(book.getTitle()))).andExpect(MockMvcResultMatchers.jsonPath("$[0].author", Matchers.is(book.getAuthor())));
     }
 
+    // test get mapping to view many books
     @Test
     @Transactional
     @Rollback
@@ -89,6 +101,8 @@ public class BookControllerTest {
         this.mvc.perform(MockMvcRequestBuilders.get("/books", new Object[0])).andExpect(MockMvcResultMatchers.status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$[0].id", Matchers.is(book.getId()))).andExpect(MockMvcResultMatchers.jsonPath("$[0].title", Matchers.is(book.getTitle()))).andExpect(MockMvcResultMatchers.jsonPath("$[0].author", Matchers.is(book.getAuthor()))).andExpect(MockMvcResultMatchers.jsonPath("$[1].id", Matchers.is(book2.getId()))).andExpect(MockMvcResultMatchers.jsonPath("$[1].title", Matchers.is(book2.getTitle()))).andExpect(MockMvcResultMatchers.jsonPath("$[1].author", Matchers.is(book2.getAuthor())));
     }
 
+    //
+    // function test for checking if the book exist by giving tittle
     @Test
     @Transactional
     @Rollback
@@ -100,6 +114,9 @@ public class BookControllerTest {
         this.mvc.perform(request).andExpect(MockMvcResultMatchers.status().isOk()).andExpect(MockMvcResultMatchers.jsonPath("$.status", Matchers.is(HttpStatus.FOUND.value()))).andExpect(MockMvcResultMatchers.jsonPath("$.message", Matchers.is("Success"))).andExpect(MockMvcResultMatchers.jsonPath("$.data.id", Matchers.is(book.getId()))).andExpect(MockMvcResultMatchers.jsonPath("$.data.title", Matchers.is(book.getTitle()))).andExpect(MockMvcResultMatchers.jsonPath("$.data.author", Matchers.is(book.getAuthor())));
     }
 
+
+    //
+    // function test for checking if there is any book by given author exist
     @Test
     @Transactional
     @Rollback
@@ -116,6 +133,21 @@ public class BookControllerTest {
                 .andExpect(MockMvcResultMatchers.jsonPath("$.data.id", Matchers.is(book.getId())))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.data.title", Matchers.is(book.getTitle())))
                 .andExpect(MockMvcResultMatchers.jsonPath("$.data.author", Matchers.is(book.getAuthor())));
+    }
+
+    @Test
+    @Transactional
+    @Rollback
+    public void testGetNonExistingAuthorDetails() throws Exception {
+        this.createMockManyBooks();
+        List<Book> bookList = (List)this.bookRepository.findAll();
+        RequestBuilder request = MockMvcRequestBuilders.get("/books/author", new Object[0])
+                .param("author", new String[]{"Manpreet"});
+        this.mvc.perform(request)
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.status", Matchers.is(HttpStatus.NOT_FOUND.value())))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.message", Matchers.is("Author not found")))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.data", Matchers.is(Matchers.nullValue())));
     }
 
     //    @Test
@@ -139,6 +171,8 @@ public class BookControllerTest {
 //                .andExpect(MockMvcResultMatchers.jsonPath("$[8].title", Matchers.is(book9.getTitle())))
 //                .andExpect(MockMvcResultMatchers.jsonPath("$[8].author", Matchers.is(book9.getAuthor())));
 //    }
+
+     // function test for checking if the book does not exist by giving title
     @Test
     @Transactional
     @Rollback
@@ -154,18 +188,80 @@ public class BookControllerTest {
                 .andExpect(MockMvcResultMatchers.jsonPath("$.data", Matchers.is(Matchers.nullValue())));
     }
 
+//    @Test
+//    @Transactional
+//    @Rollback
+//    public void testDeleteBook() throws Exception {
+////        this.createMockManyBooks();
+////        List<Book> bookList = (List)this.bookRepository.findAll();
+////        Book book3 = (Book)bookList.get(2);
+////        String deleteid = String.valueOf(book3.getId());
+////        RequestBuilder request = MockMvcRequestBuilders.delete("/books/id", new Object[0])
+////                .param("id", deleteid);
+////        this.mvc.perform(request)
+////                .andExpect(MockMvcResultMatchers.status().isOk())
+////                .andExpect(MockMvcResultMatchers.jsonPath("$.status", Matchers.is(HttpStatus.FOUND.value())))
+////                .andExpect(MockMvcResultMatchers.jsonPath("$.message", Matchers.is("Book deleted")))
+////                .andExpect(MockMvcResultMatchers.jsonPath("$.data", Matchers.is(Matchers.nullValue())));
+//        mvc.perform( MockMvcRequestBuilders.delete("/{id}", 1) )
+//                .andExpect(MockMvcResultMatchers.status().isAccepted());}
+
+
+    // test function for deleting a book
+    //This test case passes when run on its own, but fails when run as a whole
     @Test
     @Transactional
     @Rollback
     public void testDeleteBook() throws Exception {
-        this.createMockManyBooks();
-        List<Book> bookList = (List)this.bookRepository.findAll();
-        Book book3 = (Book)bookList.get(2);
-        String deleteid = String.valueOf(book3.getId());
-        RequestBuilder request = MockMvcRequestBuilders.delete("/books", new Object[0])
-                .param("id", deleteid);
+        this.createMockData();
+        Book book = (Book)this.bookRepository.findAll().iterator().next();
+        this.mvc.perform(MockMvcRequestBuilders.delete("/books/{id}", 1))
+                .andExpect(MockMvcResultMatchers.status().isOk());
     }
 
+
+//    @Test
+//    @Transactional
+//    @Rollback
+//    public void testUpdateName() throws Exception{
+//        this.createMockManyBooks();
+//        List<Book> bookList = (List)this.bookRepository.findAll();
+//        Book book3 = (Book)bookList.get(2);
+//        mvc.perform( MockMvcRequestBuilders
+//                .put("/update/{id}/name/{name}",2)
+//                .param("title", "Cafe"))
+//                //.content(asJsonString(new Book"id2","title2","author2")))
+//                //.contentType(MediaType.APPLICATION_JSON)
+//                //.accept(MediaType.APPLICATION_JSON)
+//                .andExpect(MockMvcResultMatchers.status().isOk())
+//                .andExpect(MockMvcResultMatchers.jsonPath("$.status", Matchers.is(HttpStatus.FOUND.value())))
+//                .andExpect(MockMvcResultMatchers.jsonPath("$.message", Matchers.is("Success")))
+//                .andExpect(MockMvcResultMatchers.jsonPath("$.data.id", Matchers.is(book3.getId())))
+//                .andExpect(MockMvcResultMatchers.jsonPath("$.data.title", Matchers.is(book3.getTitle())))
+//                .andExpect(MockMvcResultMatchers.jsonPath("$.data.author", Matchers.is(book3.getAuthor())));
+//    }
+
+
+    // test function for updating the book tittle by giving book id
+    @Test
+    @Transactional
+    @Rollback
+    public void testUpdateTitle() throws Exception {
+        this.createMockManyBooks();
+        List<Book> bookList = (List)this.bookRepository.findAll();
+        Book book1 = (Book)bookList.get(0);
+        mvc.perform(MockMvcRequestBuilders.put("/books/1")
+                .contentType(MediaType.APPLICATION_JSON)
+                .accept(MediaType.APPLICATION_JSON)
+                .content("{\"id\": 1,\n" +
+                        "  \"title\": \"A Notion of Love\",\n" +
+                        "  \"author\": \"Abbie Wiliams\"}"))
+                .andExpect(MockMvcResultMatchers.status().isOk())
+                .andExpect(MockMvcResultMatchers.jsonPath("$.status", Matchers.is(HttpStatus.FOUND.value())))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.message", Matchers.is("Book updated")))
+                .andExpect(MockMvcResultMatchers.jsonPath("$.data", Matchers.is(Matchers.nullValue())));
+
+    }
 
 }
 
